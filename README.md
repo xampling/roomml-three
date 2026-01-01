@@ -1,6 +1,6 @@
-# RoomML Three.js PoC
+# HSML PoC
 
-A proof of concept that turns a nested RoomML JSON description into a deterministic Three.js scene graph. Edit the JSON live in the left pane and the layout/geometry update instantly in the preview.
+A proof of concept that turns a nested HSML description into a deterministic Three.js scene graph. Edit the JSON live in the left pane and the layout/geometry update instantly in the preview.
 
 ## Getting started
 
