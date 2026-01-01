@@ -1,4 +1,4 @@
-import { RoomMLNode } from '../roomml/types';
+import { LayoutSettings, RoomMLNode, Size3DPartial } from '../roomml/types';
 
 export type Size3D = { w: number; d: number; h: number };
 
@@ -21,7 +21,7 @@ export function measureNode(node: RoomMLNode): Size3D {
 }
 
 function measureContainer(node: RoomMLNode & { children?: RoomMLNode[] }): Size3D {
-  const layout = node.layout ?? { mode: 'flex', dir: 'row', gap: 0 };
+  const layout = getLayout(node);
   const gap = layout.gap ?? 0;
   const layoutChildren = (node.children ?? []).filter((c) =>
     ['house', 'floor', 'container', 'group', 'room', 'furniture'].includes(c.type)
@@ -37,9 +37,25 @@ function measureContainer(node: RoomMLNode & { children?: RoomMLNode[] }): Size3
   const naturalW = layout.dir === 'row' ? sumMain + gap * Math.max(0, count - 1) : maxCross;
   const naturalD = layout.dir === 'row' ? maxCross : sumMain + gap * Math.max(0, count - 1);
 
+  const size = getSize(node);
+
   return {
-    w: node.size?.w ?? naturalW,
-    d: node.size?.d ?? naturalD,
-    h: node.size?.h ?? maxHeight
+    w: size?.w ?? naturalW,
+    d: size?.d ?? naturalD,
+    h: size?.h ?? maxHeight
   };
+}
+
+function getLayout(node: RoomMLNode & { layout?: LayoutSettings }): LayoutSettings {
+  if ('layout' in node && node.layout) {
+    return node.layout;
+  }
+  return { mode: 'flex', dir: 'row', gap: 0 };
+}
+
+function getSize(node: RoomMLNode & { size?: Size3DPartial }): Size3DPartial | undefined {
+  if ('size' in node) {
+    return node.size;
+  }
+  return undefined;
 }
