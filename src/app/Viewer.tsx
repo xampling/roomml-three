@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls';
 import { LayoutBox } from '../layout/types';
 import { buildScene } from '../geom/buildScene';
 
@@ -17,7 +17,8 @@ export default function Viewer({ layout, wireframe, showLayout, showGrid, hasErr
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const controlsRef = useRef<OrbitControls | null>(null);
+  const controlsRef = useRef<FirstPersonControls | null>(null);
+  const clockRef = useRef<THREE.Clock | null>(null);
   const rootGroupRef = useRef<THREE.Group | null>(null);
 
   useEffect(() => {
@@ -35,14 +36,18 @@ export default function Viewer({ layout, wireframe, showLayout, showGrid, hasErr
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(50, canvas.clientWidth / canvas.clientHeight, 0.1, 200);
-    camera.position.set(6, 6, 10);
+    camera.position.set(6, 1.8, 10);
     scene.add(camera);
     cameraRef.current = camera;
 
-    const controls = new OrbitControls(camera, canvas);
-    controls.target.set(4, 0, 4);
-    controls.enableDamping = true;
+    const controls = new FirstPersonControls(camera, canvas);
+    controls.lookSpeed = 0.12;
+    controls.movementSpeed = 6;
+    controls.lookVertical = true;
     controlsRef.current = controls;
+
+    const clock = new THREE.Clock();
+    clockRef.current = clock;
 
     const resize = () => {
       if (!rendererRef.current || !cameraRef.current || !canvasRef.current) return;
@@ -59,7 +64,8 @@ export default function Viewer({ layout, wireframe, showLayout, showGrid, hasErr
     const renderLoop = () => {
       if (stop) return;
       requestAnimationFrame(renderLoop);
-      controls.update();
+      const delta = clockRef.current?.getDelta() ?? 0;
+      controls.update(delta);
       renderer.render(scene, camera);
     };
     renderLoop();
@@ -68,6 +74,7 @@ export default function Viewer({ layout, wireframe, showLayout, showGrid, hasErr
       stop = true;
       window.removeEventListener('resize', resize);
       controls.dispose();
+      clockRef.current = null;
       renderer.dispose();
     };
   }, []);
