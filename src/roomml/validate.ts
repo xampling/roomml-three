@@ -20,7 +20,8 @@ export function validateRoomML(root: RoomMLNode): ValidationIssue[] {
   }
 
   function validateNode(node: RoomMLNode, path: string[], parentRoom?: RoomNode) {
-    const currentPath = [...path, node.id ?? node.type].join('/');
+    const nodeType = node.type;
+    const currentPath = [...path, node.id ?? nodeType].join('/');
 
     if (node.id) {
       if (idSet.has(node.id)) {
@@ -30,7 +31,7 @@ export function validateRoomML(root: RoomMLNode): ValidationIssue[] {
       }
     }
 
-    switch (node.type) {
+    switch (nodeType) {
       case 'house':
       case 'floor':
       case 'container':
@@ -58,17 +59,17 @@ export function validateRoomML(root: RoomMLNode): ValidationIssue[] {
       case 'group':
         break;
       default:
-        push({ level: 'error', path: currentPath, message: `Unknown node type '${node.type}'` });
+        push({ level: 'error', path: currentPath, message: `Unknown node type '${nodeType}'` });
     }
 
-    const nextParent = node.type === 'room' ? (node as RoomNode) : parentRoom;
+    const nextParent = nodeType === 'room' ? (node as RoomNode) : parentRoom;
     if (node.children) {
       for (const child of node.children) {
-        validateNode(child, [...path, node.id ?? node.type], nextParent);
+        validateNode(child, [...path, node.id ?? nodeType], nextParent);
       }
     }
 
-    if (node.type === 'room' && node.children) {
+    if (nodeType === 'room' && node.children) {
       validateOverlaps(node as RoomNode, currentPath, push);
     }
   }

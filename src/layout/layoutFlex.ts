@@ -1,6 +1,6 @@
 import { measureNode } from './measure';
 import { LayoutBox } from './types';
-import { RoomMLNode } from '../roomml/types';
+import { LayoutSettings, RoomMLNode } from '../roomml/types';
 
 export function layoutTree(
   node: RoomMLNode,
@@ -25,7 +25,7 @@ export function layoutTree(
     return box;
   }
 
-  const layout = node.layout ?? { mode: 'flex', dir: 'row', gap: 0 };
+  const layout: LayoutSettings = getLayout(node);
   if (layout.mode !== 'flex') return box;
 
   const layoutChildren = node.children.filter((c) =>
@@ -78,4 +78,11 @@ export function layoutTree(
   }
 
   return box;
+}
+
+function getLayout(node: RoomMLNode): LayoutSettings {
+  if ('layout' in node && node.layout) {
+    return node.layout;
+  }
+  return { mode: 'flex', dir: 'row', gap: 0 };
 }

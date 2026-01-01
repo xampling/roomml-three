@@ -16,7 +16,7 @@ export default function App() {
   const [wireframe, setWireframe] = useState(false);
   const [showLayout, setShowLayout] = useState(true);
   const [showGrid, setShowGrid] = useState(true);
-  const [activePane, setActivePane] = useState<'editor' | 'viewer'>('editor');
+  const [activePane, setActivePane] = useState<'editor' | 'viewer'>('viewer');
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export default function App() {
     const updateIsMobile = (matches: boolean) => {
       setIsMobile(matches);
       if (!matches) {
-        setActivePane('editor');
+        setActivePane('viewer');
       }
     };
 
@@ -94,7 +94,7 @@ export default function App() {
         )}
         <section className={`panel ${isMobile && activePane !== 'editor' ? 'mobile-hidden' : ''}`}>
           <div className="controls">
-            <button onClick={applyChanges}>Apply</button>
+            <button onClick={() => applyChanges()}>Apply</button>
             <button onClick={formatText} className="secondary">
               Format
             </button>
