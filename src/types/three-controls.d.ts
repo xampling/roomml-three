@@ -12,6 +12,25 @@ declare module 'three/examples/jsm/controls/FirstPersonControls.js' {
   }
 }
 
+declare module 'three/examples/jsm/controls/PointerLockControls.js' {
+  import { Camera, EventDispatcher, Vector3 } from 'three';
+
+  export class PointerLockControls extends EventDispatcher {
+    constructor(camera: Camera, domElement?: HTMLElement);
+    isLocked: boolean;
+    minPolarAngle: number;
+    maxPolarAngle: number;
+    pointerSpeed: number;
+    lock(): void;
+    unlock(): void;
+    getObject(): Camera;
+    getDirection(v: Vector3): Vector3;
+    moveForward(distance: number): void;
+    moveRight(distance: number): void;
+    dispose(): void;
+  }
+}
+
 declare module 'three/examples/jsm/controls/OrbitControls.js' {
   import { Camera, EventDispatcher, Vector3 } from 'three';
 
