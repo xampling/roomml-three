@@ -1,9 +1,11 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls.js';
+import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { LayoutBox } from '../layout/types';
 import { buildScene } from '../geom/buildScene';
+
+const FIRST_PERSON_SPEED = 6;
 
 export type ViewerProps = {
   layout: LayoutBox | null;
@@ -19,9 +21,16 @@ export default function Viewer({ layout, wireframe, showLayout, showGrid, hasErr
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const controlsRef = useRef<FirstPersonControls | OrbitControls | null>(null);
+  const controlsRef = useRef<PointerLockControls | OrbitControls | null>(null);
   const clockRef = useRef<THREE.Clock | null>(null);
   const rootGroupRef = useRef<THREE.Group | null>(null);
+  const moveStateRef = useRef({
+    forward: false,
+    backward: false,
+    left: false,
+    right: false
+  });
+  const firstPersonDirectionRef = useRef(new THREE.Vector3());
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -63,8 +72,22 @@ export default function Viewer({ layout, wireframe, showLayout, showGrid, hasErr
       const delta = clockRef.current?.getDelta() ?? 0;
       const controls = controlsRef.current;
       if (controls) {
-        if (controls instanceof FirstPersonControls) {
-          controls.update(delta);
+        if (controls instanceof PointerLockControls) {
+          if (controls.isLocked) {
+            const moveState = moveStateRef.current;
+            const direction = firstPersonDirectionRef.current;
+            direction.set(
+              Number(moveState.right) - Number(moveState.left),
+              0,
+              Number(moveState.backward) - Number(moveState.forward)
+            );
+            if (direction.lengthSq() > 0) {
+              direction.normalize();
+              const moveDistance = delta * FIRST_PERSON_SPEED;
+              controls.moveRight(direction.x * moveDistance);
+              controls.moveForward(direction.z * moveDistance);
+            }
+          }
         } else {
           controls.update();
         }
@@ -91,29 +114,72 @@ export default function Viewer({ layout, wireframe, showLayout, showGrid, hasErr
     controlsRef.current?.dispose();
 
     if (navigationMode === 'first-person') {
-      const controls = new FirstPersonControls(camera, canvas);
-      controls.lookSpeed = 0.12;
-      controls.movementSpeed = 6;
-      controls.lookVertical = true;
-      controls.activeLook = false;
+      const controls = new PointerLockControls(camera, canvas);
+      controls.pointerSpeed = 0.4;
       controlsRef.current = controls;
 
       const handlePointerDown = () => {
-        controls.activeLook = true;
+        if (!controls.isLocked) {
+          controls.lock();
+        }
       };
 
-      const handlePointerUp = () => {
-        controls.activeLook = false;
+      const handleKeyDown = (event: KeyboardEvent) => {
+        const moveState = moveStateRef.current;
+        switch (event.code) {
+          case 'KeyW':
+          case 'ArrowUp':
+            moveState.forward = true;
+            break;
+          case 'KeyS':
+          case 'ArrowDown':
+            moveState.backward = true;
+            break;
+          case 'KeyA':
+          case 'ArrowLeft':
+            moveState.left = true;
+            break;
+          case 'KeyD':
+          case 'ArrowRight':
+            moveState.right = true;
+            break;
+          default:
+            break;
+        }
+      };
+
+      const handleKeyUp = (event: KeyboardEvent) => {
+        const moveState = moveStateRef.current;
+        switch (event.code) {
+          case 'KeyW':
+          case 'ArrowUp':
+            moveState.forward = false;
+            break;
+          case 'KeyS':
+          case 'ArrowDown':
+            moveState.backward = false;
+            break;
+          case 'KeyA':
+          case 'ArrowLeft':
+            moveState.left = false;
+            break;
+          case 'KeyD':
+          case 'ArrowRight':
+            moveState.right = false;
+            break;
+          default:
+            break;
+        }
       };
 
       canvas.addEventListener('pointerdown', handlePointerDown);
-      canvas.addEventListener('pointerup', handlePointerUp);
-      canvas.addEventListener('pointerleave', handlePointerUp);
+      window.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('keyup', handleKeyUp);
 
       return () => {
         canvas.removeEventListener('pointerdown', handlePointerDown);
-        canvas.removeEventListener('pointerup', handlePointerUp);
-        canvas.removeEventListener('pointerleave', handlePointerUp);
+        window.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('keyup', handleKeyUp);
         controls.dispose();
       };
     }
